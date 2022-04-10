@@ -78,8 +78,9 @@ fn main() {
     brain.weights = Brain::random_weights();
 
     //brain.draw_graph(&mut std::io::stdout());
+
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
-        publisher.send(viewer::Message::Clear).unwrap(); 
+        publisher.send(viewer::Event::Clear).unwrap(); 
     }
 }

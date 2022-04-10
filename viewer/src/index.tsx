@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
+import { Viewer } from './Viewer';
 import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
     <React.StrictMode>
-        <App />
+        <Viewer url="ws://192.168.1.10:29999" />
     </React.StrictMode>,
     document.getElementById('root')
 );

@@ -1,14 +1,16 @@
+use std::net::{SocketAddr, TcpStream};
 use std::sync::mpsc::{Sender, Receiver, channel};
-use log::{info, error, debug};
+use std::collections::HashMap;
+use log::{info, warn, debug};
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
+use websocket::sync::Client;
 use websocket::{
-    OwnedMessage,
     sync::Server, server::NoTlsAcceptor
 };
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Message {
+pub enum Event {
     Frame(Vec<(f32, f32)>),
     Clear,
     Spawn(Vec<(Uuid, String)>),
@@ -17,6 +19,7 @@ pub enum Message {
 
 struct Viewer {
     server: Server<NoTlsAcceptor>,
+    clients: HashMap<SocketAddr, Client<TcpStream>>,
 }
 
 impl Viewer {
@@ -25,42 +28,71 @@ impl Viewer {
         server.set_nonblocking(true).unwrap();
 
         Viewer {
-            server
+            server,
+            clients: HashMap::new(),
         }
     }
 
     fn accept_incoming(&mut self) {
         while let Ok(upgrade) = self.server.accept() {
             match upgrade.accept() {
-                Err(e) => error!("websocket error: {:?}", e),
-                Ok(client) => {
-                    debug!("new client: {:?}", client.peer_addr());
-                    client.shutdown();
+                Err(e) => warn!("websocket accept error: {:?}", e),
+                Ok(mut client) => {
+                    client.set_nodelay(true).unwrap();
+                    client.set_nonblocking(true).unwrap();
+                    let addr = client.peer_addr().unwrap();
+                    if let Some(old_client) = self.clients.insert(addr, client) {
+                        old_client.shutdown().unwrap();
+                        debug!("disconnected: {}", addr);
+                    }
+                    debug!("connected: {}", addr);
                 }
             }
         }
     }
 
-    fn publish_messages(&self, receiver: &Receiver<Message>) {
+    fn publish_events(&mut self, receiver: &Receiver<Event>) {
         use std::time::Duration;
         const TIMEOUT: Duration = Duration::from_millis(1);
 
-        while let Ok(message) = receiver.recv_timeout(TIMEOUT) {
-            debug!("Publishing: {:?}", message);
+        while let Ok(event) = receiver.recv_timeout(TIMEOUT) {
+            debug!("Publishing to {} clients: {:?}", self.clients.len(), event);
+
+            let encoded = serde_json::to_string(&event).unwrap();
+            let message = websocket::Message::text(encoded);
+
+            let mut disconnected_clients = vec![];
+            for (addr, client) in self.clients.iter_mut() {
+                match client.send_message(&message) {
+                    Err(_) => {
+                        // If sending fails, assume the connection is lost.
+                        // Shut it down for good measure.
+                        client.shutdown().ok();
+                        debug!("disconnected: {}", addr);
+                        disconnected_clients.push(addr.clone());
+                    }
+                    Ok(_) => {}
+                }
+            }
+
+            // Clean up disconnected clients.
+            for addr in disconnected_clients {
+                self.clients.remove(&addr);
+            }
         }
     }
 
-    fn run(&mut self, receiver: Receiver<Message>) {
+    fn run(&mut self, receiver: Receiver<Event>) {
         info!("viewer api started");
 
         loop {
             self.accept_incoming();
-            self.publish_messages(&receiver);
+            self.publish_events(&receiver);
         }
     }
 }
 
-pub fn start_viewer() -> Sender<Message> {
+pub fn start_viewer() -> Sender<Event> {
     let (sender, receiver) = channel();
 
     std::thread::spawn(|| {
