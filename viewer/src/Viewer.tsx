@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './Viewer.css';
+import { World } from "./World";
 
 interface ViewerProps {
     url: string,
@@ -14,44 +15,52 @@ enum Status {
 
 export const Viewer = (props: ViewerProps) => {
     const [status, setStatus] = useState(Status.CONNECTING);
+    const [disconnected, setDisconnected] = useState(false);
+
+    const [agents, setAgents] = useState([]);
+    const [frame, setFrame] = useState([]);
 
     useEffect(() => {
-        if (status !== Status.CONNECTING && status !== Status.RECONNECTING) {
-            return;
-        }
-
-        console.log("connecting to publisher");
-        let socket = new WebSocket(props.url);
-
-        socket.onopen = () => {
-            console.log("connected");
-            setStatus(Status.CONNECTED);
-        }
-
-        socket.onclose = () => {
-            console.log("disconnected");
+        if (disconnected) {
             setStatus(Status.DISCONNECTED);
-        }
-
-        socket.onmessage = (message) => console.log("message: " + message);
-        socket.onerror = (error) => console.log("error: " + error);
-
-        return () => {
-            socket.close();
-        }
-    }, [status]);
-
-    useEffect(() => {
-        if (status === Status.DISCONNECTED) {
+            console.log("reconnecting in 1 second...")
             const timeout = setTimeout(() => {
+                console.log("reconnecting")
                 setStatus(Status.RECONNECTING);
+                setDisconnected(false);
             }, 1000);
 
             return () => {
                 clearTimeout(timeout);
             }
         }
-    }, [status]);
+        else {
+            console.log("connecting to publisher");
+            let socket = new WebSocket(props.url);
+
+            socket.onopen = () => {
+                console.log("connected");
+                setStatus(Status.CONNECTED);
+            }
+
+            socket.onclose = () => {
+                console.log("disconnected");
+                setStatus(Status.DISCONNECTED);
+                setDisconnected(true);
+            }
+
+            socket.onmessage = message => {
+                console.log("message: " + message.data);
+            };
+
+            socket.onerror = (error) => console.log("error: " + error);
+
+            return () => {
+                console.log("socket cleanup");
+                socket.close(); // why doesn't this actually disconnect?
+            }
+        }
+    }, [disconnected]);
 
     let issue = null;
     switch (status) {
@@ -69,6 +78,7 @@ export const Viewer = (props: ViewerProps) => {
 
     return (
         <div className="viewer">
+            <World agents={agents} frame={frame}/>
             {issue}
         </div>
     );
