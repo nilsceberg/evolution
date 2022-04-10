@@ -3,6 +3,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use rand::Rng;
 
 mod dot;
+mod viewer;
 
 const NUM_NEURONS: usize = 32;
 
@@ -62,8 +63,23 @@ impl Brain {
 }
 
 fn main() {
+    use simplelog::{CombinedLogger, TermLogger, LevelFilter, Config, TerminalMode, ColorChoice};
+
+    CombinedLogger::init(
+        vec![
+            TermLogger::new(LevelFilter::Debug, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
+            //WriteLogger::new(LevelFilter::Info, Config::default(), File::create("run.log").unwrap()),
+        ]
+    ).unwrap();
+
+    let publisher = viewer::start_viewer();
+
     let mut brain = Brain::new();
     brain.weights = Brain::random_weights();
 
-    brain.draw_graph(&mut std::io::stdout());
+    //brain.draw_graph(&mut std::io::stdout());
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        publisher.send(viewer::Message::Clear).unwrap(); 
+    }
 }
