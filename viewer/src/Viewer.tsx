@@ -56,8 +56,8 @@ export const Viewer = (props: ViewerProps) => {
             socket.onerror = (error) => console.log("error: " + error);
 
             return () => {
-                console.log("socket cleanup");
-                socket.close(); // why doesn't this actually disconnect?
+                console.log("disconnecting");
+                socket.close();
             }
         }
     }, [disconnected]);

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use log::{info, warn, debug};
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
+use websocket::OwnedMessage;
 use websocket::sync::Client;
 use websocket::{
     sync::Server, server::NoTlsAcceptor
@@ -82,11 +83,42 @@ impl Viewer {
         }
     }
 
+    fn receive_requests(&mut self) {
+        //let mut disconnected_clients = vec![];
+        for (addr, client) in self.clients.iter_mut() {
+            if let Ok(message) = client.recv_message() {
+                debug!("message from {}: {:?}", addr, message);
+                match message {
+                    OwnedMessage::Close(_) => { client.shutdown().ok(); }
+                    _ => (),
+                };
+            }
+            //match client.recv_message() {
+            //    Err(e) => {
+            //        // If sending fails, assume the connection is lost.
+            //        // Shut it down for good measure.
+            //        client.shutdown().ok();
+            //        debug!("disconnected: {}: {}", addr, e);
+            //        disconnected_clients.push(addr.clone());
+            //    }
+            //    Ok(message) => {
+            //        debug!("message from {}: {:?}", addr, message);
+            //    }
+            //}
+        }
+
+        // Clean up disconnected clients.
+        //for addr in disconnected_clients {
+        //    self.clients.remove(&addr);
+        //}
+    }
+
     fn run(&mut self, receiver: Receiver<Event>) {
         info!("viewer api started");
 
         loop {
             self.accept_incoming();
+            self.receive_requests();
             self.publish_events(&receiver);
         }
     }
