@@ -1,3 +1,17 @@
-.App {
+body {
+    font-family: monospace;
+}
+
+.Viewer {
     text-align: center;
+}
+
+.issue {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    background: #ff8080;
+    padding: 15px;
+    min-width: 150px;
+
 }

@@ -6,7 +6,7 @@ import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
     <React.StrictMode>
-        <Viewer url="ws://192.168.1.10:29999" />
+        <Viewer url="ws://localhost:29999" />
     </React.StrictMode>,
     document.getElementById('root')
 );
