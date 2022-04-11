@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AgentInfo, Frame } from './types';
 import './Viewer.css';
 import { World } from "./World";
 
@@ -17,8 +18,27 @@ export const Viewer = (props: ViewerProps) => {
     const [status, setStatus] = useState(Status.CONNECTING);
     const [disconnected, setDisconnected] = useState(false);
 
-    const [agents, setAgents] = useState([]);
-    const [frame, setFrame] = useState([]);
+    const [agents, setAgents] = useState<AgentInfo[]>([]);
+    const [frame, setFrame] = useState<Frame>([]);
+
+    const onClear = () => {
+        setAgents([]);
+        setFrame([]);
+    };
+
+    const onSpawn = (newAgents: AgentInfo[]) => {
+        setFrame([...frame, ...newAgents.map(agent => [0, 0] as [number, number])]);
+        setAgents([...agents, ...newAgents]);
+    }
+
+    const onKill = (indices: number[]) => {
+        setAgents(agents.filter((_, i) => i in indices));
+        setFrame(frame.filter((_, i) => i in indices));
+    }
+
+    const onFrame = (frame: Frame) => {
+        setFrame(frame);
+    }
 
     useEffect(() => {
         if (disconnected) {
@@ -47,10 +67,16 @@ export const Viewer = (props: ViewerProps) => {
                 console.log("disconnected");
                 setStatus(Status.DISCONNECTED);
                 setDisconnected(true);
+                onClear();
             }
 
             socket.onmessage = message => {
-                console.log("message: " + message.data);
+                const event = JSON.parse(message.data);
+                if (event === "Clear") onClear();
+                else if ("Spawn" in event) onSpawn(event["Spawn"]);
+                else if ("Kill" in event) onKill(event["Kill"]);
+                else if ("Frame" in event) onFrame(event["Frame"]);
+                else console.log("unknown message: " + event);
             };
 
             socket.onerror = (error) => console.log("error: " + error);

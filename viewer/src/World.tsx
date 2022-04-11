@@ -12,8 +12,8 @@ interface AgentProps {
 
 const Agent = (props: AgentProps) => {
     const style = {
-        left: props.position[0],
-        top: props.position[1],
+        marginLeft: props.position[0] - 4,
+        marginTop: props.position[1] - 4,
     };
 
     return (
