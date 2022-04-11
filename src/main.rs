@@ -1,5 +1,6 @@
-use rand::Rng;
+use rand::{Rng, prelude::SliceRandom};
 use uuid::Uuid;
+use log::{info};
 
 mod dot;
 mod viewer;
@@ -53,6 +54,22 @@ impl Agent {
         self.position.1 += self.brain.output(brain::Output::SpeedY);
         self.position = keep_inside_radius(self.position, WORLD_RADIUS);
     }
+
+    fn procreate(&self) -> Agent {
+        let mut rng = rand::thread_rng();
+        let mut genome = self.genome.clone();
+        genetics::mutate(&mut genome, 0.01);
+        let brain = genetics::create_brain(&genome);
+        Agent {
+            genome,
+            brain,
+            uuid: Uuid::new_v4(),
+            position: (
+                (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
+                (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
+            ),
+        }
+    }
 }
 
 fn main() {
@@ -67,22 +84,55 @@ fn main() {
 
     let publisher = viewer::start_viewer();
 
+    const NUM_AGENTS: usize = 100;
+    const GENERATION_TIME: f32 = 30.0;
 
+    let mut rng = rand::thread_rng();
     let mut agents : Vec<Agent> = vec![];
-    for _ in 0..100 {
+    for _ in 0..NUM_AGENTS {
         agents.push(Agent::new());
     }
 
-    publisher.send(viewer::spawn(&agents)).unwrap();
-    let mut time: f32 = 0.0;
+    let mut generation = 1;
     loop {
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        time += 0.050;
+        info!("simulating generation {} for {} seconds", generation, GENERATION_TIME);
 
-        publisher.send(viewer::frame(&agents)).unwrap(); 
+        publisher.send(viewer::Event::Clear).unwrap();
+        publisher.send(viewer::spawn(&agents)).unwrap();
+        let mut time: f32 = 0.0;
+        while time < GENERATION_TIME {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            time += 0.050;
 
-        for agent in &mut agents {
-            agent.simulate(time);
+            publisher.send(viewer::frame(&agents)).unwrap(); 
+
+            for agent in &mut agents {
+                agent.simulate(time);
+            }
         }
+
+        // Impose selection!
+        let mut survivors = vec![];
+        for agent in agents {
+            if agent.position.0 > WORLD_RADIUS * 0.7 {
+                survivors.push(agent);
+            }
+        }
+
+        if survivors.is_empty() {
+            info!("no survivors, exiting");
+            break;
+        }
+        else {
+            info!("{} survivors", survivors.len());
+        }
+
+        // Randomly pick a survivor to procreate until we reach cap.
+        agents = vec![];
+        while agents.len() < NUM_AGENTS {
+            agents.push(survivors.choose(&mut rng).unwrap().procreate());
+        }
+
+        generation += 1;
     }
 }
