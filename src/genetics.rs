@@ -11,19 +11,20 @@ pub const NUM_CODONS: usize = NUM_NEURONS * NUM_NEURONS;
 pub type Genome = [f32; NUM_CODONS];
 
 pub fn randomize() -> Genome {
-    const PROB_LIVE: f32 = 0.1;
+    let mut genome :Genome = [0.0; NUM_CODONS];
+    mutate(&mut genome, 0.1);
+    genome
+}
+
+pub fn mutate(genome: &mut Genome, probability: f32) {
     const WEIGHT_RANGE: std::ops::Range<f32> = -1.0..1.0;
 
     let mut rng = rand::thread_rng();
-
-    let mut codons :Genome = [0.0; NUM_CODONS];
     for i in 0..NUM_CODONS {
-        if rng.gen::<f32>() < PROB_LIVE {
-            codons[i] = rng.gen_range(WEIGHT_RANGE);
+        if rng.gen::<f32>() < probability {
+            genome[i] = rng.gen_range(WEIGHT_RANGE);
         }
     }
-
-    return codons;
 }
 
 pub fn create_brain(genome: &Genome) -> Brain {

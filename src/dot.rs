@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use super::brain::{NUM_NEURONS, FIXED_INDICES, INPUT_INDICES, OUTPUT_INDICES, Inputs, Outputs};
+use super::brain::{NUM_NEURONS, FIXED_INDICES, INPUT_INDICES, OUTPUT_INDICES, Input, Output};
 
 impl super::Brain {
     pub fn draw_graph(&self, file: &mut impl Write) {
@@ -27,7 +27,7 @@ impl super::Brain {
         writeln!(file, "subgraph cluster_inputs {{").unwrap();
         writeln!(file, "peripheries=0;").unwrap();
         for i in INPUT_INDICES {
-            let input: Inputs = num::FromPrimitive::from_usize(i).unwrap();
+            let input: Input = num::FromPrimitive::from_usize(i).unwrap();
             writeln!(file, "_{} [label=\"IN:{:?}\", bgcolor=\"blue\"]", i, input).unwrap();
         }
         writeln!(file, "}}").unwrap();
@@ -39,7 +39,7 @@ impl super::Brain {
         writeln!(file, "subgraph cluster_outputs {{").unwrap();
         writeln!(file, "peripheries=0;").unwrap();
         for i in OUTPUT_INDICES {
-            let output: Outputs = num::FromPrimitive::from_usize(i).unwrap();
+            let output: Output = num::FromPrimitive::from_usize(i).unwrap();
             writeln!(file, "_{} [label=\"OUT:{:?}\"]", i, output).unwrap();
         }
         writeln!(file, "}}").unwrap();
