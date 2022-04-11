@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AgentInfo, Frame } from './types';
+import { AgentInfo, Frame, Settings } from './types';
 import './Viewer.css';
 import { World } from "./World";
 
@@ -20,6 +20,9 @@ export const Viewer = (props: ViewerProps) => {
 
     const [agents, setAgents] = useState<AgentInfo[]>([]);
     const [frame, setFrame] = useState<Frame>([]);
+    const [settings, setSettings] = useState<Settings>({
+        radius: 0,
+    });
 
     const onClear = () => {
         setAgents([]);
@@ -38,6 +41,10 @@ export const Viewer = (props: ViewerProps) => {
 
     const onFrame = (frame: Frame) => {
         setFrame(frame);
+    }
+
+    const onSettings = (settings: Settings) => {
+        setSettings(settings);
     }
 
     useEffect(() => {
@@ -76,7 +83,8 @@ export const Viewer = (props: ViewerProps) => {
                 else if ("Spawn" in event) onSpawn(event["Spawn"]);
                 else if ("Kill" in event) onKill(event["Kill"]);
                 else if ("Frame" in event) onFrame(event["Frame"]);
-                else console.log("unknown message: " + event);
+                else if ("Settings" in event) onSettings(event["Settings"]);
+                else console.log("unknown message: ", event);
             };
 
             socket.onerror = (error) => console.log("error: " + error);
@@ -104,7 +112,7 @@ export const Viewer = (props: ViewerProps) => {
 
     return (
         <div className="viewer">
-            <World agents={agents} frame={frame}/>
+            <World settings={settings} agents={agents} frame={frame}/>
             {issue}
         </div>
     );

@@ -16,6 +16,9 @@ pub enum Event {
     Clear,
     Spawn(Vec<(Uuid, String)>),
     Kill(Vec<usize>),
+    Settings {
+        radius: f32,
+    }
 }
 
 pub fn spawn(agents: &Vec<super::Agent>) -> Event {
@@ -26,9 +29,12 @@ pub fn frame(agents: &Vec<super::Agent>) -> Event {
     Event::Frame(agents.into_iter().map(|agent| agent.position).collect())
 }
 
+type ViewerServer = Server<NoTlsAcceptor>;
+type ViewerClient = Client<TcpStream>;
+
 struct Viewer {
-    server: Server<NoTlsAcceptor>,
-    clients: HashMap<SocketAddr, Client<TcpStream>>,
+    server: ViewerServer,
+    clients: HashMap<SocketAddr, ViewerClient>,
     agents: Vec<(Uuid, String)>,
 }
 
@@ -44,6 +50,11 @@ impl Viewer {
         }
     }
 
+    fn send_message(&self, to: &mut ViewerClient, event: Event) {
+        let encoded = serde_json::to_string(&event).unwrap();
+        to.send_message(&websocket::Message::text(encoded)).ok();
+    }
+
     fn accept_incoming(&mut self) {
         while let Ok(upgrade) = self.server.accept() {
             match upgrade.accept() {
@@ -53,8 +64,8 @@ impl Viewer {
                         client.set_nodelay(true).unwrap();
                         client.set_nonblocking(true).unwrap();
 
-                        let encoded = serde_json::to_string(&Event::Spawn(self.agents.clone())).unwrap();
-                        client.send_message(&websocket::Message::text(encoded)).ok();
+                        self.send_message(&mut client, Event::Settings { radius: 500.0 });
+                        self.send_message(&mut client, Event::Spawn(self.agents.clone()));
 
                         if let Some(old_client) = self.clients.insert(addr, client) {
                             old_client.shutdown().unwrap();

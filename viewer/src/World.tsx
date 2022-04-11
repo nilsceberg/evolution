@@ -1,9 +1,10 @@
-import { AgentInfo, Frame } from "./types";
+import { AgentInfo, Frame, Settings } from "./types";
 import "./World.css";
 
 interface WorldProps {
     frame: Frame;
     agents: AgentInfo[];
+    settings: Settings;
 }
 
 interface AgentProps {
@@ -34,9 +35,21 @@ const Agent = (props: AgentProps) => {
     )
 }
 
+const Edge = ({ radius }: { radius: number }) => {
+    const style = {
+        width: radius*2,
+        height: radius*2,
+        borderRadius: radius,
+        marginLeft: -radius,
+        marginTop: -radius,
+    };
+    return <div className="Edge" style={style}/>;
+}
+
 export const World = (props: WorldProps) => {
     return (
         <div className="World">
+            <Edge radius={props.settings.radius}/>
             <div className="XAxis"/>
             <div className="YAxis"/>
             {props.agents.map((agent, index) => 

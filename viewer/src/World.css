@@ -22,6 +22,13 @@
     left: 50%;
 }
 
+.World .Edge {
+    border: 1px dashed #657080;
+    left: 50%;
+    top: 50%;
+    background-color: #202028;
+}
+
 .World .Agent {
     background-color: white;
     box-sizing: border-box;
