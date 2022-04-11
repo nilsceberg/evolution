@@ -17,6 +17,16 @@ pub struct Agent {
     brain: brain::Brain,
 }
 
+fn keep_inside_radius(mut position: (f32, f32), radius: f32) -> (f32, f32) {
+    let length = (position.0.powf(2.0) + position.1.powf(2.0)).sqrt();
+    if length > radius {
+        let correction = radius / length;
+        position.0 *= correction;
+        position.1 *= correction;
+    }
+    position
+}
+
 impl Agent {
     fn new() -> Agent {
         let mut rng = rand::thread_rng();
@@ -33,18 +43,15 @@ impl Agent {
         }
     }
 
-    fn simulate(&mut self) {
-        let mut rng = rand::thread_rng();
-        let dx = (rng.gen::<f32>() * 2.0 - 1.0) * 10.0;
-        let dy = (rng.gen::<f32>() * 2.0 - 1.0) * 10.0;
-        self.position.0 += dx;
-        self.position.1 += dy;
-        let length = (self.position.0.powf(2.0) + self.position.1.powf(2.0)).sqrt();
-        if length > WORLD_RADIUS {
-            let correction = WORLD_RADIUS / length;
-            self.position.0 *= correction;
-            self.position.1 *= correction;
-        }
+    fn simulate(&mut self, time: f32) {
+        self.brain.input(brain::Input::Constant, 1.0);
+        self.brain.input(brain::Input::Oscillator, time * std::f32::consts::TAU);
+        self.brain.input(brain::Input::X, self.position.0);
+        self.brain.input(brain::Input::Y, self.position.1);
+        self.brain.simulate();
+        self.position.0 += self.brain.output(brain::Output::SpeedX);
+        self.position.1 += self.brain.output(brain::Output::SpeedY);
+        self.position = keep_inside_radius(self.position, WORLD_RADIUS);
     }
 }
 
@@ -67,12 +74,15 @@ fn main() {
     }
 
     publisher.send(viewer::spawn(&agents)).unwrap();
+    let mut time: f32 = 0.0;
     loop {
         std::thread::sleep(std::time::Duration::from_millis(50));
+        time += 0.050;
+
         publisher.send(viewer::frame(&agents)).unwrap(); 
 
         for agent in &mut agents {
-            agent.simulate();
+            agent.simulate(time);
         }
     }
 }

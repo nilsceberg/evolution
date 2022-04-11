@@ -5,6 +5,8 @@ pub const NUM_NEURONS: usize = 32;
 
 #[derive(Debug, FromPrimitive, ToPrimitive)]
 pub enum Input {
+    Constant,
+    Oscillator,
     X,
     Y,
     Number
@@ -31,7 +33,7 @@ pub struct Brain {
 
 fn activation_function(index: usize, value: f32) -> f32 {
     if index == Output::SpeedX as usize || index == Output::SpeedY as usize {
-        value
+        2.0 / (1.0 + (-4.0 * value).exp()) - 1.0
     }
     else {
         // Sigmoidal function:
