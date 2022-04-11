@@ -26,6 +26,7 @@ export const Viewer = (props: ViewerProps) => {
     });
 
     const [highlight, setHighlight] = useState<string>("");
+    const [showUi, setShowUi] = useState(false);
 
     const onClear = () => {
         setAgents([]);
@@ -116,8 +117,8 @@ export const Viewer = (props: ViewerProps) => {
     return (
         <div className="Viewer">
             <div className="Panes">
-                <UI highlight={highlight} onHighlight={id => setHighlight(id)} agents={agents}/>
-                <World settings={settings} agents={agents} frame={frame} highlight={highlight} onHighlight={id => setHighlight(id)}/>
+                <UI highlight={showUi ? highlight : ""} onHighlight={id => setHighlight(id)} agents={agents} show={showUi} onToggle={show => setShowUi(show)}/>
+                <World highlight={showUi ? highlight : ""} settings={settings} agents={agents} frame={frame} onHighlight={id => setHighlight(id)}/>
             </div>
             {issue}
         </div>

@@ -1,13 +1,33 @@
 .UI {
     height: 100%;
-    background-color: red;
     flex-basis: 400px;
     background: #202028;
     border-right: 1px solid #657080;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    transition: flex-basis 0.5s;
+}
+
+.UI.closed {
+    flex-basis: 64px;
+}
+
+.UI > .Agents {
     overflow-x: hidden;
     overflow-y: scroll;
+    flex-grow: 1;
+}
+
+.UI > .Toggle {
     padding: 20px;
-    box-sizing: border-box;
+    text-align: right;
+    cursor: pointer;
+}
+
+.UI > .Toggle:hover {
+    background: #252530;
 }
 
 .AgentInfo {

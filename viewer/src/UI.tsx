@@ -7,6 +7,8 @@ interface UIProps {
     agents: AgentInfo[];
     highlight: string;
     onHighlight: (id: string) => void;
+    onToggle: (show: boolean) => void;
+    show: boolean;
 }
 
 interface AgentInfoBoxProps {
@@ -44,8 +46,11 @@ const AgentInfoBox = (props: AgentInfoBoxProps) => {
 
 export const UI = (props: UIProps) => {
     return (
-        <div className="UI">
-            {props.agents.map(agent => <AgentInfoBox highlight={agent[0] === props.highlight} onHighlight={props.onHighlight} key={agent[0]} info={agent}/>)}
+        <div className={`UI ${props.show ? "" : "closed"}`}>
+            <div className="Toggle" onClick={() => props.onToggle(!props.show)}>{props.show ? "CLOSE" : "OPEN"}</div>
+            <div className="Agents">
+                {props.show ? props.agents.map(agent => <AgentInfoBox highlight={agent[0] === props.highlight} onHighlight={props.onHighlight} key={agent[0]} info={agent}/>) : <></>}
+            </div>
         </div>
     );
 }
