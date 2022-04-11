@@ -3,14 +3,25 @@ body {
 }
 
 .Viewer {
-    text-align: center;
 }
 
-.issue {
+.Viewer .Panes {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+}
+
+.Issue {
     position: fixed;
     left: 10px;
     top: 10px;
     background: #ff8080;
     padding: 15px;
     min-width: 150px;
+}
+
+:root {
+    color-scheme: dark;
 }

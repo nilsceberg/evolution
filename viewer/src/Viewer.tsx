@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AgentInfo, Frame, Settings } from './types';
 import './Viewer.css';
 import { World } from "./World";
+import { UI } from "./UI";
 
 interface ViewerProps {
     url: string,
@@ -23,6 +24,8 @@ export const Viewer = (props: ViewerProps) => {
     const [settings, setSettings] = useState<Settings>({
         radius: 0,
     });
+
+    const [highlight, setHighlight] = useState<string>("");
 
     const onClear = () => {
         setAgents([]);
@@ -99,20 +102,23 @@ export const Viewer = (props: ViewerProps) => {
     let issue = null;
     switch (status) {
         case Status.CONNECTING:
-            issue = <div className="issue">Connecting...</div>
+            issue = <div className="Issue">Connecting...</div>
             break;
         case Status.RECONNECTING:
-            issue = <div className="issue">Reconnecting...</div>
+            issue = <div className="Issue">Reconnecting...</div>
             break;
         case Status.DISCONNECTED:
-            issue = <div className="issue">Connection lost</div>
+            issue = <div className="Issue">Connection lost</div>
             break;
         default:
     }
 
     return (
-        <div className="viewer">
-            <World settings={settings} agents={agents} frame={frame}/>
+        <div className="Viewer">
+            <div className="Panes">
+                <UI highlight={highlight} onHighlight={id => setHighlight(id)} agents={agents}/>
+                <World settings={settings} agents={agents} frame={frame} highlight={highlight} onHighlight={id => setHighlight(id)}/>
+            </div>
             {issue}
         </div>
     );

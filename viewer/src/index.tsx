@@ -5,7 +5,7 @@ import { Viewer } from './Viewer';
 import reportWebVitals from './reportWebVitals';
 
 const params = new URLSearchParams(window.location.search);
-const url = params.get("url") || "ws://localhost:29999";
+const url = params.get("url") || `ws://${window.location.hostname}:29999`;
 
 ReactDOM.render(
     <React.StrictMode>

@@ -1,23 +1,21 @@
 import { useMemo } from "react";
 import { AgentInfo, Frame, Settings } from "./types";
+import { agentColor } from "./util";
 import "./World.css";
 
 interface WorldProps {
     frame: Frame;
     agents: AgentInfo[];
     settings: Settings;
+    highlight: string;
+    onHighlight: (id: string) => void;
 }
 
 interface AgentProps {
     info: AgentInfo;
+    highlight: boolean;
     position: [number, number];
-}
-
-function agentColor(genome: number[]): string {
-    let hue = genome
-        .map((x, i) => Math.sin(i / 10) * x)
-        .reduce((a,b) => a+b, 0);
-    return `hsl(${hue * 120 % 360}deg 100% 50%)`;
+    onHighlight: (id: string) => void;
 }
 
 const Agent = (props: AgentProps) => {
@@ -26,12 +24,12 @@ const Agent = (props: AgentProps) => {
         marginLeft: props.position[0] - 4,
         marginTop: props.position[1] - 4,
         backgroundColor: color,
-        boxShadow: `0px 0px 20px 5px ${color}`,
+        boxShadow: props.highlight ? `0px 0px 20px 20px #bbc` : `0px 0px 20px 5px ${color}`,
     };
 
     return (
-        <div className="Agent" style={style}></div>
-    )
+        <div className="Agent" style={style} onClick={() => props.onHighlight(props.info[0])}></div>
+    );
 }
 
 const Edge = ({ radius }: { radius: number }) => {
@@ -52,7 +50,7 @@ export const World = (props: WorldProps) => {
             <div className="XAxis"/>
             <div className="YAxis"/>
             {props.agents.map((agent, index) => 
-                <Agent key={agent[0]} info={agent} position={props.frame[index]}/>
+                <Agent key={agent[0]} onHighlight={props.onHighlight} info={agent} highlight={agent[0] === props.highlight} position={props.frame[index]}/>
             )}
         </div>
     );

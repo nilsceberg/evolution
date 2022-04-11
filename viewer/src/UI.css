@@ -1,0 +1,63 @@
+.UI {
+    height: 100%;
+    background-color: red;
+    flex-basis: 400px;
+    background: #202028;
+    border-right: 1px solid #657080;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.AgentInfo {
+    background-color: #303038;
+    margin: 20px;
+    padding: 10px;
+}
+
+.AgentInfo.highlight {
+    background-color: #606068;
+}
+
+.AgentInfo > .AgentId {
+    margin-bottom: 10px;
+}
+
+.AgentInfo .GenomeColor {
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    display: inline-block;
+}
+
+.AgentInfo .GenomeViz {
+    margin-left: 10px;
+    display: inline-block;
+    height: 10px;
+}
+
+.AgentInfo .GenomeViz>div {
+    display: inline-block;
+    height: 10px;
+    width: 5px;
+}
+
+html {
+    scrollbar-face-color: #303038;
+    scrollbar-base-color: #303038;
+    scrollbar-3dlight-color: #303038;
+    scrollbar-highlight-color: #303038;
+    scrollbar-track-color: #202028;
+    scrollbar-arrow-color: #202028;
+    scrollbar-shadow-color: #303038;
+    scrollbar-dark-shadow-color: #303038;
+}
+
+::-webkit-scrollbar { width: 8px; height: 3px;}
+::-webkit-scrollbar-button {  background-color: #303038;}
+::-webkit-scrollbar-track {  background-color: #303038;}
+::-webkit-scrollbar-track-piece { background-color: #202028;}
+::-webkit-scrollbar-thumb { height: 50px; background-color: #303038;}
+::-webkit-scrollbar-corner { background-color: #303038;}
+::-webkit-resizer { background-color: #303038;}
