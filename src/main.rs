@@ -6,6 +6,8 @@ mod viewer;
 mod brain;
 mod genetics;
 
+const WORLD_RADIUS: f32 = 500.0;
+
 use brain::Brain;
 
 pub struct Agent {
@@ -37,6 +39,12 @@ impl Agent {
         let dy = (rng.gen::<f32>() * 2.0 - 1.0) * 10.0;
         self.position.0 += dx;
         self.position.1 += dy;
+        let length = (self.position.0.powf(2.0) + self.position.1.powf(2.0)).sqrt();
+        if length > WORLD_RADIUS {
+            let correction = WORLD_RADIUS / length;
+            self.position.0 *= correction;
+            self.position.1 *= correction;
+        }
     }
 }
 

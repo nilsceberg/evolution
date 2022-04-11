@@ -64,7 +64,7 @@ impl Viewer {
                         client.set_nodelay(true).unwrap();
                         client.set_nonblocking(true).unwrap();
 
-                        self.send_message(&mut client, Event::Settings { radius: 500.0 });
+                        self.send_message(&mut client, Event::Settings { radius: super::WORLD_RADIUS });
                         self.send_message(&mut client, Event::Spawn(self.agents.clone()));
 
                         if let Some(old_client) = self.clients.insert(addr, client) {
