@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use super::{NUM_NEURONS, FIXED_INDICES, INPUT_INDICES, OUTPUT_INDICES, Inputs, Outputs};
+use super::brain::{NUM_NEURONS, FIXED_INDICES, INPUT_INDICES, OUTPUT_INDICES, Inputs, Outputs};
 
 impl super::Brain {
     pub fn draw_graph(&self, file: &mut impl Write) {
