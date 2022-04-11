@@ -4,9 +4,12 @@ import './index.css';
 import { Viewer } from './Viewer';
 import reportWebVitals from './reportWebVitals';
 
+const params = new URLSearchParams(window.location.search);
+const url = params.get("url") || "ws://localhost:29999";
+
 ReactDOM.render(
     <React.StrictMode>
-        <Viewer url="ws://localhost:29999" />
+        <Viewer url={url} />
     </React.StrictMode>,
     document.getElementById('root')
 );
