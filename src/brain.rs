@@ -1,5 +1,4 @@
 use std::ops::Range;
-use rand::Rng;
 use num_derive::{FromPrimitive, ToPrimitive};
 
 pub const NUM_NEURONS: usize = 32;
@@ -38,23 +37,5 @@ impl Brain {
             excitation: [0.0; NUM_NEURONS],
             activation: [0.0; NUM_NEURONS],
         }
-    }
-
-    pub fn random_weights() -> [[f32; NUM_NEURONS]; NUM_NEURONS] {
-        const PROB_LIVE: f32 = 0.1;
-        const WEIGHT_RANGE: std::ops::Range<f32> = -1.0..1.0;
-
-        let mut rng = rand::thread_rng();
-
-        let mut weights = [[0.0; NUM_NEURONS]; NUM_NEURONS];
-        for i in 0..NUM_NEURONS {
-            for j in 0..NUM_NEURONS {
-                if rng.gen::<f32>() < PROB_LIVE {
-                    weights[i][j] = rng.gen_range(WEIGHT_RANGE);
-                }
-            }
-        }
-
-        return weights;
     }
 }

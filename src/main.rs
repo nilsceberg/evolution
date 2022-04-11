@@ -4,18 +4,25 @@ use uuid::Uuid;
 mod dot;
 mod viewer;
 mod brain;
+mod genetics;
 
 use brain::Brain;
 
 pub struct Agent {
     uuid: Uuid,
     position: (f32, f32),
+    genome: genetics::Genome,
+    brain: brain::Brain,
 }
 
 impl Agent {
     fn new() -> Agent {
         let mut rng = rand::thread_rng();
+        let genome = genetics::randomize();
+        let brain = genetics::create_brain(&genome);
         Agent {
+            genome,
+            brain,
             uuid: Uuid::new_v4(),
             position: (
                 (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
@@ -45,10 +52,6 @@ fn main() {
 
     let publisher = viewer::start_viewer();
 
-    let mut brain = Brain::new();
-    brain.weights = Brain::random_weights();
-
-    //brain.draw_graph(&mut std::io::stdout());
 
     let mut agents : Vec<Agent> = vec![];
     for _ in 0..100 {

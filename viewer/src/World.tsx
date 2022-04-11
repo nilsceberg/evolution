@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { AgentInfo, Frame, Settings } from "./types";
 import "./World.css";
 
@@ -12,17 +13,15 @@ interface AgentProps {
     position: [number, number];
 }
 
-function agentColor(genome: string): string {
+function agentColor(genome: number[]): string {
     let hue = genome
-        .split("")
-        .map(x => (x.charCodeAt(0) - 97) / 25)
         .map((x, i) => Math.sin(i / 10) * x)
         .reduce((a,b) => a+b, 0);
     return `hsl(${hue * 120 % 360}deg 100% 50%)`;
 }
 
 const Agent = (props: AgentProps) => {
-    const color = agentColor(props.info[0]);
+    const color = useMemo(() => agentColor(props.info[1]), [props.info[1]]);
     const style = {
         marginLeft: props.position[0] - 4,
         marginTop: props.position[1] - 4,

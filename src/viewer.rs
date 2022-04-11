@@ -14,7 +14,7 @@ use websocket::{
 pub enum Event {
     Frame(Vec<(f32, f32)>),
     Clear,
-    Spawn(Vec<(Uuid, String)>),
+    Spawn(Vec<(Uuid, Vec<f32>)>),
     Kill(Vec<usize>),
     Settings {
         radius: f32,
@@ -22,7 +22,7 @@ pub enum Event {
 }
 
 pub fn spawn(agents: &Vec<super::Agent>) -> Event {
-    Event::Spawn(agents.into_iter().map(|agent| (agent.uuid, "".to_string())).collect())
+    Event::Spawn(agents.into_iter().map(|agent| (agent.uuid, Vec::from(agent.genome.to_vec()))).collect())
 }
 
 pub fn frame(agents: &Vec<super::Agent>) -> Event {
@@ -35,7 +35,7 @@ type ViewerClient = Client<TcpStream>;
 struct Viewer {
     server: ViewerServer,
     clients: HashMap<SocketAddr, ViewerClient>,
-    agents: Vec<(Uuid, String)>,
+    agents: Vec<(Uuid, Vec<f32>)>,
 }
 
 impl Viewer {
