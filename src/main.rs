@@ -119,12 +119,16 @@ fn main() {
 
     let mut rng = rand::thread_rng();
     let mut agents : Vec<Agent> = vec![];
-    for _ in 0..NUM_AGENTS {
-        agents.push(Agent::new());
-    }
 
     let mut generation = 1;
     loop {
+        if agents.is_empty() {
+            info!("seeding...");
+            for _ in 0..NUM_AGENTS {
+                agents.push(Agent::new());
+            }
+        }
+
         info!("simulating generation {} for {} seconds", generation, GENERATION_TIME);
 
         let safe_zone = Zone::random(WORLD_RADIUS, 50.0..100.0);
@@ -157,20 +161,20 @@ fn main() {
             }
         }
 
+        agents = vec![];
         if survivors.is_empty() {
-            info!("no survivors, exiting");
-            break;
+            info!("no survivors, reseeding");
+            generation = 1;
         }
         else {
             info!("{} survivors", survivors.len());
-        }
 
-        // Randomly pick a survivor to procreate until we reach cap.
-        agents = vec![];
-        while agents.len() < NUM_AGENTS {
-            agents.push(survivors.choose(&mut rng).unwrap().procreate());
-        }
+            // Randomly pick a survivor to procreate until we reach cap.
+            while agents.len() < NUM_AGENTS {
+                agents.push(survivors.choose(&mut rng).unwrap().procreate());
+            }
 
-        generation += 1;
+            generation += 1;
+        }
     }
 }
