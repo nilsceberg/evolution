@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { AgentInfo, Frame, Settings } from "./types";
 import { agentColor } from "./util";
 import "./World.css";
@@ -9,6 +9,8 @@ interface WorldProps {
     settings: Settings;
     highlight: string;
     onHighlight: (id: string) => void;
+    startTime: Date;
+    simulationTime: number;
 }
 
 interface AgentProps {
@@ -56,6 +58,25 @@ const Zone = ({ x, y, radius }: { x: number, y: number, radius: number }) => {
 
 
 export const World = (props: WorldProps) => {
+    /*const timerRef = useRef<HTMLHeadingElement>(null);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (timerRef.current) {
+                const now = new Date().getTime() / 1000;
+                const start = props.startTime.getTime() / 1000;
+                const frame_time = props.settings.frame_interval / 1000;
+                const time_steps_per_second = props.settings.time_step / frame_time;
+                const generation_real_time = props.settings.generation_time / time_steps_per_second;
+                console.log(generation_real_time);
+                timerRef.current.innerText = `${(generation_real_time - (now - start)).toFixed(1)} s`;
+            }
+        }, 50);
+        return () => {
+            clearInterval(interval);
+        }
+    }, [props.startTime]);*/
+
     return (
         <div className="World">
             <Edge radius={props.settings.world_radius}/>
@@ -65,7 +86,8 @@ export const World = (props: WorldProps) => {
             {props.agents.map((agent, index) => 
                 <Agent key={agent[0]} onHighlight={props.onHighlight} info={agent} highlight={agent[0] === props.highlight} position={props.frame[index]}/>
             )}
-            <h1>{props.settings.title}</h1>
+            <h1 className="Title">{props.settings.title}</h1>
+            <h1 className="Timer">{Math.max(props.settings.generation_time - props.simulationTime, 0).toFixed(1)} tu</h1>
         </div>
     );
 }
