@@ -162,7 +162,7 @@ fn main() {
 
 
     let (start_agents, start_settings, start_header) = if let Some(filename) = revive {
-        history::History::revive(filename, Some(4))
+        history::History::revive(filename, None)
     }
     else {
         let mut agents = vec![];
@@ -213,13 +213,15 @@ fn main() {
 
                 settings.title = format!("Generation {}", generation);
 
-                let safe_zone = match settings.zone {
-                    Some(zone) => zone,
-                    None => {
-                        let safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
-                        safe_zone
-                    }
-                };
+                // If we want to load safe zone from history:
+                //let safe_zone = match settings.zone {
+                //    Some(zone) => zone,
+                //    None => {
+                //        let safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
+                //        safe_zone
+                //    }
+                //};
+                let safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
                 settings.zone = Some(safe_zone.clone());
 
                 viewer.publish(viewer::Event::Settings(settings.clone()));
