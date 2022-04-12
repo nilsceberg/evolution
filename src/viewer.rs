@@ -13,6 +13,7 @@ use websocket::{
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Settings {
     pub radius: f32,
+    pub title: String,
     pub zone: Option<super::Zone>,
 }
 

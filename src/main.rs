@@ -130,6 +130,7 @@ fn main() {
         let safe_zone = Zone::random(WORLD_RADIUS, 50.0..100.0);
 
         publisher.send(viewer::Event::Settings(viewer::Settings {
+            title: format!("Generation {}", generation),
             radius: WORLD_RADIUS,
             zone: Some(safe_zone.clone()),
         })).unwrap();

@@ -65,6 +65,7 @@ export const World = (props: WorldProps) => {
             {props.agents.map((agent, index) => 
                 <Agent key={agent[0]} onHighlight={props.onHighlight} info={agent} highlight={agent[0] === props.highlight} position={props.frame[index]}/>
             )}
+            <h1>{props.settings.title}</h1>
         </div>
     );
 }

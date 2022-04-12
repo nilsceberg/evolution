@@ -22,6 +22,7 @@ export const Viewer = (props: ViewerProps) => {
     const [agents, setAgents] = useState<AgentInfo[]>([]);
     const [frame, setFrame] = useState<Frame>([]);
     const [settings, setSettings] = useState<Settings>({
+        title: "",
         radius: 0,
         zone: undefined,
     });

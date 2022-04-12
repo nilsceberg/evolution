@@ -47,3 +47,9 @@
     box-shadow: 0px 0px 20px 5px rgba(0,0,0,50%);
     /*border: 1px solid black;*/
 }
+
+.World h1 {
+    position: fixed;
+    font-size: 18pt;
+    margin: 40px;
+}
