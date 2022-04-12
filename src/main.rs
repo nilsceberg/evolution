@@ -151,7 +151,7 @@ fn main() {
     ).unwrap();
 
     let enable_viewer = true;
-    let revive = Some("bestof/3b94aaac-6a65-48c4-8e7c-b4485ebdb5fc.log");
+    let revive = Some("bestof/53f612ea-c535-4b71-871f-8b60e9a7585a.log");
 
     let viewer = if enable_viewer {
         viewer::start_viewer()
@@ -171,7 +171,7 @@ fn main() {
             title: "".to_string(),
             num_agents: 100,
             zone: None,
-            mutation_rate: 0.1,
+            mutation_rate: 0.03,
             mutation_strength: 0.25,
             frame_interval: 5,
             time_step: 0.05,
@@ -192,6 +192,9 @@ fn main() {
 
     let mut agents : Vec<Agent> = vec![];
     let mut settings = start_settings;
+
+    // Override
+    settings.generation_time = 100.0;
 
     let mut log = history::History::new(start_header.clone());
 
@@ -221,7 +224,7 @@ fn main() {
                 //        safe_zone
                 //    }
                 //};
-                let safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
+                let mut safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
                 settings.zone = Some(safe_zone.clone());
 
                 viewer.publish(viewer::Event::Settings(settings.clone()));
@@ -234,7 +237,15 @@ fn main() {
                         std::thread::sleep(std::time::Duration::from_millis(settings.frame_interval.into()));
                     }
 
+                    let last_time = time;
                     time += settings.time_step;
+
+                    if last_time <= settings.generation_time / 2.0 && time > settings.generation_time / 2.0 {
+                        // Re-place safe zone
+                        safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
+                        settings.zone = Some(safe_zone.clone());
+                        viewer.publish(viewer::Event::Settings(settings.clone()));
+                    }
 
                     viewer.publish(viewer::frame(&agents)); 
 
