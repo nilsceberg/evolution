@@ -6,10 +6,11 @@ import reportWebVitals from './reportWebVitals';
 
 const params = new URLSearchParams(window.location.search);
 const url = params.get("url") || `ws://${window.location.hostname}:29999`;
+const ui = params.has("ui");
 
 ReactDOM.render(
     <React.StrictMode>
-        <Viewer url={url} />
+        <Viewer ui={ui} url={url} />
     </React.StrictMode>,
     document.getElementById('root')
 );

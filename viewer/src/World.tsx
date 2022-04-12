@@ -24,7 +24,7 @@ const Agent = (props: AgentProps) => {
         marginLeft: props.position[0] - 4,
         marginTop: props.position[1] - 4,
         backgroundColor: color,
-        boxShadow: props.highlight ? `0px 0px 20px 20px #bbc` : `0px 0px 20px 5px ${color}`,
+        boxShadow: props.highlight ? `0px 0px 20px 20px #bbc` : "none", //`0px 0px 20px 5px ${color}`,
     };
 
     return (

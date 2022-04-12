@@ -6,6 +6,7 @@ import { UI } from "./UI";
 
 interface ViewerProps {
     url: string,
+    ui: boolean,
 }
 
 enum Status {
@@ -119,7 +120,7 @@ export const Viewer = (props: ViewerProps) => {
     return (
         <div className="Viewer">
             <div className="Panes">
-                <UI highlight={showUi ? highlight : ""} onHighlight={id => setHighlight(id)} agents={agents} show={showUi} onToggle={show => setShowUi(show)}/>
+                {props.ui ? <UI highlight={showUi ? highlight : ""} onHighlight={id => setHighlight(id)} agents={agents} show={showUi} onToggle={show => setShowUi(show)}/> : null}
                 <World highlight={showUi ? highlight : ""} settings={settings} agents={agents} frame={frame} onHighlight={id => setHighlight(id)}/>
             </div>
             {issue}
