@@ -131,7 +131,7 @@ fn main() {
 
         info!("simulating generation {} for {} seconds", generation, GENERATION_TIME);
 
-        let safe_zone = Zone::random(WORLD_RADIUS, 50.0..100.0);
+        let safe_zone = Zone::random(WORLD_RADIUS, 100.0..150.0);
 
         publisher.send(viewer::Event::Settings(viewer::Settings {
             title: format!("Generation {}", generation),
