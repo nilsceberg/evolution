@@ -58,7 +58,7 @@ const Zone = ({ x, y, radius }: { x: number, y: number, radius: number }) => {
 export const World = (props: WorldProps) => {
     return (
         <div className="World">
-            <Edge radius={props.settings.radius}/>
+            <Edge radius={props.settings.world_radius}/>
             <div className="XAxis"/>
             {props.settings.zone ? <Zone {...props.settings.zone}/> : null}
             <div className="YAxis"/>

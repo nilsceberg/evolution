@@ -24,7 +24,7 @@ export const Viewer = (props: ViewerProps) => {
     const [frame, setFrame] = useState<Frame>([]);
     const [settings, setSettings] = useState<Settings>({
         title: "",
-        radius: 0,
+        world_radius: 0,
         zone: undefined,
     });
 

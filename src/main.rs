@@ -9,8 +9,6 @@ mod brain;
 mod genetics;
 mod history;
 
-const WORLD_RADIUS: f32 = 500.0;
-
 use brain::Brain;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -23,7 +21,7 @@ pub enum SimulationMode {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Settings {
-    pub radius: f32,
+    pub world_radius: f32,
     pub title: String,
     pub zone: Option<Zone>,
     pub mutation_rate: f32,
@@ -95,7 +93,7 @@ impl Agent {
         }
     }
 
-    fn simulate(&mut self, time: f32, safe_zone: &Zone) {
+    fn simulate(&mut self, time: f32, world_radius: f32, safe_zone: &Zone) {
         self.brain.input(brain::Input::Constant, 1.0);
         self.brain.input(brain::Input::Oscillator, time * std::f32::consts::TAU);
         self.brain.input(brain::Input::X, self.position.0);
@@ -106,7 +104,7 @@ impl Agent {
         self.brain.simulate();
         self.position.0 += self.brain.output(brain::Output::SpeedX);
         self.position.1 += self.brain.output(brain::Output::SpeedY);
-        self.position = keep_inside_radius(self.position, WORLD_RADIUS);
+        self.position = keep_inside_radius(self.position, world_radius);
     }
 
     fn procreate(&self, rate: f32, strength: f32) -> Agent {
@@ -147,7 +145,7 @@ fn main() {
     };
 
     let mut settings = Settings {
-        radius: WORLD_RADIUS,
+        world_radius: 500.0,
         title: "".to_string(),
         num_agents: 100,
         zone: None,
@@ -178,7 +176,7 @@ fn main() {
                 info!("simulating generation {} for {} seconds", generation, settings.generation_time);
                 log.log_generation(generation, &settings);
 
-                let safe_zone = Zone::random(WORLD_RADIUS, radius_low..radius_high);
+                let safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
 
                 settings.title = format!("Generation {}", generation);
                 settings.zone = Some(safe_zone.clone());
@@ -194,7 +192,7 @@ fn main() {
                     viewer.publish(viewer::frame(&agents)); 
 
                     for agent in &mut agents {
-                        agent.simulate(time, &safe_zone);
+                        agent.simulate(time, settings.world_radius, &safe_zone);
                     }
                 }
 
