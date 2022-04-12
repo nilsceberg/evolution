@@ -30,8 +30,8 @@
 }
 
 .World .Zone {
-    border: 1px dashed #802020;
-    background-color: rgba(128,32,32,0.1);
+    border: 1px dashed rgb(32,128,32);
+    background-color: rgba(32,128,32,0.1);
     left: 50%;
     top: 50%;
 }
