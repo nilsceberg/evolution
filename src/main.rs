@@ -51,7 +51,7 @@ pub struct Zone {
 impl Zone {
     fn random(world_radius: f32, radius: std::ops::Range<f32>) -> Zone {
         let mut rng = rand::thread_rng();
-        let r = world_radius * rng.gen::<f32>(); //.sqrt();
+        let r = (world_radius - radius.end) * rng.gen::<f32>().sqrt();
         let theta = rng.gen::<f32>() * 2.0 * std::f32::consts::PI;
         let radius = rng.gen_range(radius);
         Zone {
