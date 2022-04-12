@@ -12,17 +12,15 @@ pub type Genome = [f32; NUM_CODONS];
 
 pub fn randomize() -> Genome {
     let mut genome :Genome = [0.0; NUM_CODONS];
-    mutate(&mut genome, 0.1);
+    mutate(&mut genome, 0.1, 1.0);
     genome
 }
 
-pub fn mutate(genome: &mut Genome, probability: f32) {
-    const WEIGHT_RANGE: std::ops::Range<f32> = -1.0..1.0;
-
+pub fn mutate(genome: &mut Genome, probability: f32, factor: f32) {
     let mut rng = rand::thread_rng();
     for i in 0..NUM_CODONS {
         if rng.gen::<f32>() < probability {
-            genome[i] = rng.gen_range(WEIGHT_RANGE);
+            genome[i] += rng.sample::<f32, _>(rand_distr::StandardNormal) * factor;
         }
     }
 }
@@ -36,4 +34,3 @@ pub fn create_brain(genome: &Genome) -> Brain {
     }
     brain
 }
-

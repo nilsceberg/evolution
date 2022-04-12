@@ -90,7 +90,7 @@ impl Agent {
     fn procreate(&self) -> Agent {
         let mut rng = rand::thread_rng();
         let mut genome = self.genome.clone();
-        genetics::mutate(&mut genome, 0.01);
+        genetics::mutate(&mut genome, 0.01, 0.25);
         let brain = genetics::create_brain(&genome);
         Agent {
             genome,
