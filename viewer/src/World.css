@@ -29,6 +29,13 @@
     background-color: #202028;
 }
 
+.World .Zone {
+    border: 1px dashed #802020;
+    background-color: rgba(128,32,32,0.1);
+    left: 50%;
+    top: 50%;
+}
+
 .World .Agent {
     background-color: white;
     box-sizing: border-box;

@@ -10,15 +10,19 @@ use websocket::{
     sync::Server, server::NoTlsAcceptor
 };
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Settings {
+    pub radius: f32,
+    pub zone: Option<super::Zone>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
     Frame(Vec<(f32, f32)>),
     Clear,
     Spawn(Vec<(Uuid, Vec<f32>)>),
     Kill(Vec<usize>),
-    Settings {
-        radius: f32,
-    }
+    Settings(Settings),
 }
 
 pub fn spawn(agents: &Vec<super::Agent>) -> Event {
@@ -36,6 +40,7 @@ struct Viewer {
     server: ViewerServer,
     clients: HashMap<SocketAddr, ViewerClient>,
     agents: Vec<(Uuid, Vec<f32>)>,
+    settings: Option<Settings>,
 }
 
 impl Viewer {
@@ -47,11 +52,12 @@ impl Viewer {
             server,
             clients: HashMap::new(),
             agents: vec![],
+            settings: None,
         }
     }
 
-    fn send_message(&self, to: &mut ViewerClient, event: Event) {
-        let encoded = serde_json::to_string(&event).unwrap();
+    fn send_message(&self, to: &mut ViewerClient, event: &Event) {
+        let encoded = serde_json::to_string(event).unwrap();
         to.send_message(&websocket::Message::text(encoded)).ok();
     }
 
@@ -64,8 +70,10 @@ impl Viewer {
                         client.set_nodelay(true).unwrap();
                         client.set_nonblocking(true).unwrap();
 
-                        self.send_message(&mut client, Event::Settings { radius: super::WORLD_RADIUS });
-                        self.send_message(&mut client, Event::Spawn(self.agents.clone()));
+                        if let Some(settings) = &self.settings {
+                            self.send_message(&mut client, &Event::Settings(settings.clone()));
+                        }
+                        self.send_message(&mut client, &Event::Spawn(self.agents.clone()));
 
                         if let Some(old_client) = self.clients.insert(addr, client) {
                             old_client.shutdown().unwrap();
@@ -95,6 +103,9 @@ impl Viewer {
                 },
                 Event::Clear => {
                     self.agents.clear();
+                }
+                Event::Settings(settings) => {
+                    self.settings = Some(settings.clone())
                 }
                 _ => ()
             }

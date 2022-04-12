@@ -1,4 +1,5 @@
 use rand::{Rng, prelude::SliceRandom};
+use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 use log::{info};
 
@@ -16,6 +17,27 @@ pub struct Agent {
     position: (f32, f32),
     genome: genetics::Genome,
     brain: brain::Brain,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Zone {
+    x: f32,
+    y: f32,
+    radius: f32,
+}
+
+impl Zone {
+    fn random(world_radius: f32, radius: std::ops::Range<f32>) -> Zone {
+        let mut rng = rand::thread_rng();
+        let r = world_radius * rng.gen::<f32>().sqrt();
+        let theta = rng.gen::<f32>() * 2.0 * std::f32::consts::PI;
+        let radius = rng.gen_range(radius);
+        Zone {
+            radius,
+            x: r * theta.cos(),
+            y: r * theta.sin(),
+        }
+    }
 }
 
 fn keep_inside_radius(mut position: (f32, f32), radius: f32) -> (f32, f32) {
@@ -83,9 +105,10 @@ fn main() {
     ).unwrap();
 
     let publisher = viewer::start_viewer();
+    publisher.send(viewer::Event::Clear).unwrap();
 
     const NUM_AGENTS: usize = 100;
-    const GENERATION_TIME: f32 = 30.0;
+    const GENERATION_TIME: f32 = 50.0;
 
     let mut rng = rand::thread_rng();
     let mut agents : Vec<Agent> = vec![];
@@ -97,8 +120,15 @@ fn main() {
     loop {
         info!("simulating generation {} for {} seconds", generation, GENERATION_TIME);
 
+        let safe_zone = Zone::random(WORLD_RADIUS, 50.0..100.0);
+
+        publisher.send(viewer::Event::Settings(viewer::Settings {
+            radius: WORLD_RADIUS,
+            zone: Some(safe_zone.clone()),
+        })).unwrap();
         publisher.send(viewer::Event::Clear).unwrap();
         publisher.send(viewer::spawn(&agents)).unwrap();
+
         let mut time: f32 = 0.0;
         while time < GENERATION_TIME {
             std::thread::sleep(std::time::Duration::from_millis(10));
@@ -114,7 +144,7 @@ fn main() {
         // Impose selection!
         let mut survivors = vec![];
         for agent in agents {
-            if agent.position.0 > WORLD_RADIUS * 0.7 {
+            if agent.position.0 > WORLD_RADIUS * 0.9 {
                 survivors.push(agent);
             }
         }

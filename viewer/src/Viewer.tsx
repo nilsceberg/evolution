@@ -23,6 +23,7 @@ export const Viewer = (props: ViewerProps) => {
     const [frame, setFrame] = useState<Frame>([]);
     const [settings, setSettings] = useState<Settings>({
         radius: 0,
+        zone: undefined,
     });
 
     const [highlight, setHighlight] = useState<string>("");

@@ -43,11 +43,24 @@ const Edge = ({ radius }: { radius: number }) => {
     return <div className="Edge" style={style}/>;
 }
 
+const Zone = ({ x, y, radius }: { x: number, y: number, radius: number }) => {
+    const style = {
+        width: radius*2,
+        height: radius*2,
+        borderRadius: radius,
+        marginLeft: -radius + x,
+        marginTop: -radius + y,
+    };
+    return <div className="Zone" style={style}/>;
+}
+
+
 export const World = (props: WorldProps) => {
     return (
         <div className="World">
             <Edge radius={props.settings.radius}/>
             <div className="XAxis"/>
+            {props.settings.zone ? <Zone {...props.settings.zone}/> : null}
             <div className="YAxis"/>
             {props.agents.map((agent, index) => 
                 <Agent key={agent[0]} onHighlight={props.onHighlight} info={agent} highlight={agent[0] === props.highlight} position={props.frame[index]}/>
