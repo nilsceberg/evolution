@@ -38,6 +38,10 @@ impl Zone {
             y: r * theta.sin(),
         }
     }
+
+    fn contains(&self, position: (f32, f32)) -> bool {
+        (position.0 - self.x).powf(2.0) + (position.1 - self.y).powf(2.0) < self.radius.powf(2.0)
+    }
 }
 
 fn keep_inside_radius(mut position: (f32, f32), radius: f32) -> (f32, f32) {
@@ -66,11 +70,14 @@ impl Agent {
         }
     }
 
-    fn simulate(&mut self, time: f32) {
+    fn simulate(&mut self, time: f32, safe_zone: &Zone) {
         self.brain.input(brain::Input::Constant, 1.0);
         self.brain.input(brain::Input::Oscillator, time * std::f32::consts::TAU);
         self.brain.input(brain::Input::X, self.position.0);
         self.brain.input(brain::Input::Y, self.position.1);
+        self.brain.input(brain::Input::SafeX, safe_zone.x);
+        self.brain.input(brain::Input::SafeY, safe_zone.y);
+        self.brain.input(brain::Input::SafeRadius, safe_zone.radius);
         self.brain.simulate();
         self.position.0 += self.brain.output(brain::Output::SpeedX);
         self.position.1 += self.brain.output(brain::Output::SpeedY);
@@ -137,14 +144,14 @@ fn main() {
             publisher.send(viewer::frame(&agents)).unwrap(); 
 
             for agent in &mut agents {
-                agent.simulate(time);
+                agent.simulate(time, &safe_zone);
             }
         }
 
         // Impose selection!
         let mut survivors = vec![];
         for agent in agents {
-            if agent.position.0 > WORLD_RADIUS * 0.9 {
+            if safe_zone.contains(agent.position) {
                 survivors.push(agent);
             }
         }

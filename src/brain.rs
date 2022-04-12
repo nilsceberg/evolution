@@ -9,6 +9,9 @@ pub enum Input {
     Oscillator,
     X,
     Y,
+    SafeX,
+    SafeY,
+    SafeRadius,
     Number
 }
 
