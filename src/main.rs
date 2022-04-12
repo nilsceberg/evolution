@@ -10,6 +10,7 @@ mod genetics;
 mod history;
 
 use brain::Brain;
+use websocket::result::StatusCode;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum SimulationMode {
@@ -78,9 +79,9 @@ fn keep_inside_radius(mut position: (f32, f32), radius: f32) -> (f32, f32) {
 
 impl Agent {
     fn new() -> Agent {
-        let mut rng = rand::thread_rng();
         let genome = genetics::randomize();
         let brain = genetics::create_brain(&genome);
+        let mut rng = rand::thread_rng();
         Agent {
             genome,
             brain,
@@ -123,6 +124,20 @@ impl Agent {
             ),
         }
     }
+
+    fn clone(&self) -> Agent {
+        let mut rng = rand::thread_rng();
+        Agent {
+            brain: genetics::create_brain(&self.genome),
+            genome: self.genome,
+            uuid: Uuid::new_v4(),
+            parent: None,
+            position: (
+                (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
+                (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
+            ),
+        }
+    }
 }
 
 fn main() {
@@ -136,6 +151,7 @@ fn main() {
     ).unwrap();
 
     let enable_viewer = true;
+    let revive = Some("bestof/3b94aaac-6a65-48c4-8e7c-b4485ebdb5fc.log");
 
     let viewer = if enable_viewer {
         viewer::start_viewer()
@@ -144,49 +160,78 @@ fn main() {
         viewer::ViewerHandle::Disabled
     };
 
-    let mut settings = Settings {
-        world_radius: 500.0,
-        title: "".to_string(),
-        num_agents: 100,
-        zone: None,
-        mutation_rate: 0.1,
-        mutation_strength: 0.25,
-        frame_interval: 5,
-        time_step: 0.05,
-        generation_time: 50.0,
-        mode: SimulationMode::SafeZoneRace { radius_low: 50.0, radius_high: 100.0 },
+
+    let (start_agents, start_settings, start_header) = if let Some(filename) = revive {
+        history::History::revive(filename, Some(4))
+    }
+    else {
+        let mut agents = vec![];
+        let settings = Settings {
+            world_radius: 500.0,
+            title: "".to_string(),
+            num_agents: 100,
+            zone: None,
+            mutation_rate: 0.1,
+            mutation_strength: 0.25,
+            frame_interval: 5,
+            time_step: 0.05,
+            generation_time: 50.0,
+            mode: SimulationMode::SafeZoneRace { radius_low: 50.0, radius_high: 100.0 },
+        };
+
+        for _ in 0..settings.num_agents {
+            agents.push(Agent::new());
+        }
+
+        (
+            agents,
+            settings,
+            history::Header::new(),
+        )
     };
 
-    let mut log = history::History::new();
+    let mut agents : Vec<Agent> = vec![];
+    let mut settings = start_settings;
+
+    let mut log = history::History::new(start_header.clone());
 
     let mut rng = rand::thread_rng();
-    let mut agents : Vec<Agent> = vec![];
-
-    let mut generation = 1;
+    let mut generation = start_header.revived_generation.unwrap_or(1);
     match settings.mode {
         SimulationMode::SafeZoneRace { radius_low, radius_high } => {
             loop {
                 if agents.is_empty() {
                     info!("seeding...");
-                    for _ in 0..settings.num_agents {
-                        agents.push(Agent::new());
+                    for agent in &start_agents {
+                        agents.push(agent.clone());
                     }
                 }
 
                 info!("simulating generation {} for {} seconds", generation, settings.generation_time);
                 log.log_generation(generation, &settings);
 
-                let safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
 
                 settings.title = format!("Generation {}", generation);
+
+                let safe_zone = match settings.zone {
+                    Some(zone) => zone,
+                    None => {
+                        let safe_zone = Zone::random(settings.world_radius, radius_low..radius_high);
+                        safe_zone
+                    }
+                };
                 settings.zone = Some(safe_zone.clone());
+
                 viewer.publish(viewer::Event::Settings(settings.clone()));
                 viewer.publish(viewer::Event::Clear);
                 viewer.publish(viewer::spawn(&agents));
 
                 let mut time: f32 = 0.0;
                 while time < settings.generation_time {
-                    std::thread::sleep(std::time::Duration::from_millis(settings.frame_interval.into()));
+                    if enable_viewer {
+                        std::thread::sleep(std::time::Duration::from_millis(settings.frame_interval.into()));
+                    }
+
                     time += settings.time_step;
 
                     viewer.publish(viewer::frame(&agents)); 
@@ -209,8 +254,8 @@ fn main() {
                 agents = vec![];
                 if survivors.is_empty() {
                     info!("no survivors, reseeding");
-                    generation = 1;
-                    log = history::History::new();
+                    generation = start_header.revived_generation.unwrap_or(1);
+                    log = history::History::new(start_header.clone());
                 }
                 else {
                     info!("{} survivors", survivors.len());
@@ -222,6 +267,9 @@ fn main() {
 
                     generation += 1;
                 }
+
+                // Clear zone for next run.
+                settings.zone = None;
             }
         }
     }
