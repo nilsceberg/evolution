@@ -7,6 +7,7 @@ mod dot;
 mod viewer;
 mod brain;
 mod genetics;
+mod history;
 
 const WORLD_RADIUS: f32 = 500.0;
 
@@ -14,6 +15,7 @@ use brain::Brain;
 
 pub struct Agent {
     uuid: Uuid,
+    parent: Option<Uuid>,
     position: (f32, f32),
     genome: genetics::Genome,
     brain: brain::Brain,
@@ -63,6 +65,7 @@ impl Agent {
             genome,
             brain,
             uuid: Uuid::new_v4(),
+            parent: None,
             position: (
                 (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
                 (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
@@ -93,6 +96,7 @@ impl Agent {
             genome,
             brain,
             uuid: Uuid::new_v4(),
+            parent: Some(self.uuid),
             position: (
                 (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
                 (rng.gen::<f32>() * 2.0 - 1.0) * 300.0,
@@ -117,6 +121,8 @@ fn main() {
     const NUM_AGENTS: usize = 100;
     const GENERATION_TIME: f32 = 50.0;
 
+    let mut log = history::History::new();
+
     let mut rng = rand::thread_rng();
     let mut agents : Vec<Agent> = vec![];
 
@@ -130,6 +136,7 @@ fn main() {
         }
 
         info!("simulating generation {} for {} seconds", generation, GENERATION_TIME);
+        log.log_generation(generation);
 
         let safe_zone = Zone::random(WORLD_RADIUS, 100.0..150.0);
 
@@ -156,7 +163,9 @@ fn main() {
         // Impose selection!
         let mut survivors = vec![];
         for agent in agents {
-            if safe_zone.contains(agent.position) {
+            let survived = safe_zone.contains(agent.position);
+            log.log_agent(agent.to_log_entry(survived));
+            if survived {
                 survivors.push(agent);
             }
         }
@@ -165,6 +174,7 @@ fn main() {
         if survivors.is_empty() {
             info!("no survivors, reseeding");
             generation = 1;
+            log = history::History::new();
         }
         else {
             info!("{} survivors", survivors.len());
