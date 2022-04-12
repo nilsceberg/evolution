@@ -138,7 +138,7 @@ fn main() {
         info!("simulating generation {} for {} seconds", generation, GENERATION_TIME);
         log.log_generation(generation);
 
-        let safe_zone = Zone::random(WORLD_RADIUS, 50.0..150.0);
+        let safe_zone = Zone::random(WORLD_RADIUS, 50.0..100.0);
 
         publisher.send(viewer::Event::Settings(viewer::Settings {
             title: format!("Generation {}", generation),
@@ -150,7 +150,7 @@ fn main() {
 
         let mut time: f32 = 0.0;
         while time < GENERATION_TIME {
-            std::thread::sleep(std::time::Duration::from_millis(10));
+            std::thread::sleep(std::time::Duration::from_millis(5));
             time += 0.050;
 
             publisher.send(viewer::frame(&agents)).unwrap(); 
