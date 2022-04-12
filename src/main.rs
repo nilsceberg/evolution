@@ -13,6 +13,28 @@ const WORLD_RADIUS: f32 = 500.0;
 
 use brain::Brain;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum SimulationMode {
+    SafeZoneRace {
+        radius_low: f32,
+        radius_high: f32,
+    },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Settings {
+    pub radius: f32,
+    pub title: String,
+    pub zone: Option<Zone>,
+    pub mutation_rate: f32,
+    pub mutation_strength: f32,
+    pub num_agents: usize,
+    pub time_step: f32,
+    pub frame_interval: u32,
+    pub mode: SimulationMode,
+    pub generation_time: f32,
+}
+
 pub struct Agent {
     uuid: Uuid,
     parent: Option<Uuid>,
@@ -87,10 +109,10 @@ impl Agent {
         self.position = keep_inside_radius(self.position, WORLD_RADIUS);
     }
 
-    fn procreate(&self) -> Agent {
+    fn procreate(&self, rate: f32, strength: f32) -> Agent {
         let mut rng = rand::thread_rng();
         let mut genome = self.genome.clone();
-        genetics::mutate(&mut genome, 0.01, 0.25);
+        genetics::mutate(&mut genome, rate, strength);
         let brain = genetics::create_brain(&genome);
         Agent {
             genome,
@@ -115,11 +137,27 @@ fn main() {
         ]
     ).unwrap();
 
-    let publisher = viewer::start_viewer();
-    publisher.send(viewer::Event::Clear).unwrap();
+    let enable_viewer = true;
 
-    const NUM_AGENTS: usize = 100;
-    const GENERATION_TIME: f32 = 50.0;
+    let viewer = if enable_viewer {
+        viewer::start_viewer()
+    }
+    else {
+        viewer::ViewerHandle::Disabled
+    };
+
+    let mut settings = Settings {
+        radius: WORLD_RADIUS,
+        title: "".to_string(),
+        num_agents: 100,
+        zone: None,
+        mutation_rate: 0.1,
+        mutation_strength: 0.25,
+        frame_interval: 5,
+        time_step: 0.05,
+        generation_time: 50.0,
+        mode: SimulationMode::SafeZoneRace { radius_low: 50.0, radius_high: 100.0 },
+    };
 
     let mut log = history::History::new();
 
@@ -127,64 +165,66 @@ fn main() {
     let mut agents : Vec<Agent> = vec![];
 
     let mut generation = 1;
-    loop {
-        if agents.is_empty() {
-            info!("seeding...");
-            for _ in 0..NUM_AGENTS {
-                agents.push(Agent::new());
+    match settings.mode {
+        SimulationMode::SafeZoneRace { radius_low, radius_high } => {
+            loop {
+                if agents.is_empty() {
+                    info!("seeding...");
+                    for _ in 0..settings.num_agents {
+                        agents.push(Agent::new());
+                    }
+                }
+
+                info!("simulating generation {} for {} seconds", generation, settings.generation_time);
+                log.log_generation(generation, &settings);
+
+                let safe_zone = Zone::random(WORLD_RADIUS, radius_low..radius_high);
+
+                settings.title = format!("Generation {}", generation);
+                settings.zone = Some(safe_zone.clone());
+                viewer.publish(viewer::Event::Settings(settings.clone()));
+                viewer.publish(viewer::Event::Clear);
+                viewer.publish(viewer::spawn(&agents));
+
+                let mut time: f32 = 0.0;
+                while time < settings.generation_time {
+                    std::thread::sleep(std::time::Duration::from_millis(settings.frame_interval.into()));
+                    time += settings.time_step;
+
+                    viewer.publish(viewer::frame(&agents)); 
+
+                    for agent in &mut agents {
+                        agent.simulate(time, &safe_zone);
+                    }
+                }
+
+                // Impose selection!
+                let mut survivors = vec![];
+                for agent in agents {
+                    let survived = safe_zone.contains(agent.position);
+                    log.log_agent(agent.to_log_entry(survived));
+                    if survived {
+                        survivors.push(agent);
+                    }
+                }
+
+                agents = vec![];
+                if survivors.is_empty() {
+                    info!("no survivors, reseeding");
+                    generation = 1;
+                    log = history::History::new();
+                }
+                else {
+                    info!("{} survivors", survivors.len());
+
+                    // Randomly pick a survivor to procreate until we reach cap.
+                    while agents.len() < settings.num_agents {
+                        agents.push(survivors.choose(&mut rng).unwrap().procreate(settings.mutation_rate, settings.mutation_strength));
+                    }
+
+                    generation += 1;
+                }
             }
-        }
-
-        info!("simulating generation {} for {} seconds", generation, GENERATION_TIME);
-        log.log_generation(generation);
-
-        let safe_zone = Zone::random(WORLD_RADIUS, 50.0..100.0);
-
-        publisher.send(viewer::Event::Settings(viewer::Settings {
-            title: format!("Generation {}", generation),
-            radius: WORLD_RADIUS,
-            zone: Some(safe_zone.clone()),
-        })).unwrap();
-        publisher.send(viewer::Event::Clear).unwrap();
-        publisher.send(viewer::spawn(&agents)).unwrap();
-
-        let mut time: f32 = 0.0;
-        while time < GENERATION_TIME {
-            std::thread::sleep(std::time::Duration::from_millis(5));
-            time += 0.050;
-
-            publisher.send(viewer::frame(&agents)).unwrap(); 
-
-            for agent in &mut agents {
-                agent.simulate(time, &safe_zone);
-            }
-        }
-
-        // Impose selection!
-        let mut survivors = vec![];
-        for agent in agents {
-            let survived = safe_zone.contains(agent.position);
-            log.log_agent(agent.to_log_entry(survived));
-            if survived {
-                survivors.push(agent);
-            }
-        }
-
-        agents = vec![];
-        if survivors.is_empty() {
-            info!("no survivors, reseeding");
-            generation = 1;
-            log = history::History::new();
-        }
-        else {
-            info!("{} survivors", survivors.len());
-
-            // Randomly pick a survivor to procreate until we reach cap.
-            while agents.len() < NUM_AGENTS {
-                agents.push(survivors.choose(&mut rng).unwrap().procreate());
-            }
-
-            generation += 1;
         }
     }
 }

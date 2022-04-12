@@ -16,11 +16,11 @@ pub fn randomize() -> Genome {
     genome
 }
 
-pub fn mutate(genome: &mut Genome, probability: f32, factor: f32) {
+pub fn mutate(genome: &mut Genome, rate: f32, strength: f32) {
     let mut rng = rand::thread_rng();
     for i in 0..NUM_CODONS {
-        if rng.gen::<f32>() < probability {
-            genome[i] += rng.sample::<f32, _>(rand_distr::StandardNormal) * factor;
+        if rng.gen::<f32>() < rate {
+            genome[i] += rng.sample::<f32, _>(rand_distr::StandardNormal) * strength;
         }
     }
 }

@@ -41,10 +41,10 @@ impl History {
         }
     }
 
-    pub fn log_generation(&mut self, number: usize) {
+    pub fn log_generation(&mut self, number: usize, settings: &super::Settings) {
         // Make sure last generation is flushed
         self.write.flush().unwrap();
-        writeln!(&mut self.write, ":{}", number).unwrap();
+        writeln!(&mut self.write, ":{} {}", number, serde_json::to_string(&settings).unwrap()).unwrap();
     }
 
     pub fn log_agent(&mut self, entry: AgentEntry) {

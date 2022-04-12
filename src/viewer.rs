@@ -10,20 +10,13 @@ use websocket::{
     sync::Server, server::NoTlsAcceptor
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Settings {
-    pub radius: f32,
-    pub title: String,
-    pub zone: Option<super::Zone>,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
     Frame(Vec<(f32, f32)>),
     Clear,
     Spawn(Vec<(Uuid, Vec<f32>)>),
     Kill(Vec<usize>),
-    Settings(Settings),
+    Settings(super::Settings),
 }
 
 pub fn spawn(agents: &Vec<super::Agent>) -> Event {
@@ -41,7 +34,21 @@ struct Viewer {
     server: ViewerServer,
     clients: HashMap<SocketAddr, ViewerClient>,
     agents: Vec<(Uuid, Vec<f32>)>,
-    settings: Option<Settings>,
+    settings: Option<super::Settings>,
+}
+
+pub enum ViewerHandle {
+    Mpsc(std::sync::mpsc::Sender<Event>),
+    Disabled,
+}
+
+impl ViewerHandle {
+    pub fn publish(&self, event: Event) {
+        match self {
+            ViewerHandle::Mpsc(sender) => { sender.send(event).unwrap() }
+            _ => {}
+        }
+    }
 }
 
 impl Viewer {
@@ -159,7 +166,7 @@ impl Viewer {
     }
 }
 
-pub fn start_viewer() -> Sender<Event> {
+pub fn start_viewer() -> ViewerHandle {
     let (sender, receiver) = channel();
 
     std::thread::spawn(|| {
@@ -167,5 +174,5 @@ pub fn start_viewer() -> Sender<Event> {
         viewer.run(receiver);
     });
 
-    sender
+    ViewerHandle::Mpsc(sender)
 }
