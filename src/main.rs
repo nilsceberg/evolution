@@ -31,7 +31,7 @@ pub struct Zone {
 impl Zone {
     fn random(world_radius: f32, radius: std::ops::Range<f32>) -> Zone {
         let mut rng = rand::thread_rng();
-        let r = world_radius * rng.gen::<f32>().sqrt();
+        let r = world_radius * rng.gen::<f32>(); //.sqrt();
         let theta = rng.gen::<f32>() * 2.0 * std::f32::consts::PI;
         let radius = rng.gen_range(radius);
         Zone {
@@ -138,7 +138,7 @@ fn main() {
         info!("simulating generation {} for {} seconds", generation, GENERATION_TIME);
         log.log_generation(generation);
 
-        let safe_zone = Zone::random(WORLD_RADIUS, 100.0..150.0);
+        let safe_zone = Zone::random(WORLD_RADIUS, 50.0..150.0);
 
         publisher.send(viewer::Event::Settings(viewer::Settings {
             title: format!("Generation {}", generation),
