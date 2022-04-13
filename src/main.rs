@@ -2,6 +2,7 @@ use rand::{Rng, prelude::SliceRandom};
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 use log::{info};
+use clap::Parser;
 
 mod dot;
 mod viewer;
@@ -10,7 +11,6 @@ mod genetics;
 mod history;
 
 use brain::Brain;
-use websocket::result::StatusCode;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum SimulationMode {
@@ -32,6 +32,45 @@ pub struct Settings {
     pub frame_interval: u32,
     pub mode: SimulationMode,
     pub generation_time: f32,
+}
+
+#[derive(Parser)]
+pub struct Args {
+    /// Override probability that a weight will be changed.
+    #[clap(long)]
+    mutation_rate: Option<f32>,
+    
+    /// Override strength factor of each mutation.
+    #[clap(long)]
+    mutation_strength: Option<f32>,
+    
+    /// Override safe zone size lower bound.
+    #[clap(long)]
+    safe_lower: Option<f32>,
+    
+    /// Override safe zone radius upper bound.
+    #[clap(long)]
+    safe_upper: Option<f32>,
+    
+    /// Override generation time.
+    #[clap(long)]
+    generation_time: Option<f32>,
+
+    /// Seed from log file.
+    #[clap(long)]
+    revive: Option<String>,
+
+    /// If seeding from log file, use this generation.
+    #[clap(long, requires = "revive")]
+    generation: Option<usize>,
+    
+    /// Enable viewer
+    #[clap(long)]
+    viewer: bool,
+
+    /// Disable logging (not implemented)
+    #[clap(long)]
+    no_log: bool,
 }
 
 pub struct Agent {
@@ -140,6 +179,12 @@ impl Agent {
     }
 }
 
+fn override_setting<T: Clone>(setting: &mut T, option: &Option<T>) {
+    if let Some(value) = option {
+        *setting = value.clone();
+    }
+}
+
 fn main() {
     use simplelog::{CombinedLogger, TermLogger, LevelFilter, Config, TerminalMode, ColorChoice};
 
@@ -150,19 +195,17 @@ fn main() {
         ]
     ).unwrap();
 
-    let enable_viewer = true;
-    let revive = Some("bestof/53f612ea-c535-4b71-871f-8b60e9a7585a.log");
+    let args = Args::parse();
 
-    let viewer = if enable_viewer {
+    let viewer = if args.viewer {
         viewer::start_viewer()
     }
     else {
         viewer::ViewerHandle::Disabled
     };
 
-
-    let (start_agents, start_settings, start_header) = if let Some(filename) = revive {
-        history::History::revive(filename, None)
+    let (start_agents, mut start_settings, start_header) = if let Some(filename) = args.revive {
+        history::History::revive(&filename, args.generation)
     }
     else {
         let mut agents = vec![];
@@ -190,11 +233,19 @@ fn main() {
         )
     };
 
+    // Override start settings with args:
+    override_setting(&mut start_settings.mutation_rate, &args.mutation_rate);
+    override_setting(&mut start_settings.mutation_strength, &args.mutation_strength);
+    override_setting(&mut start_settings.generation_time, &args.generation_time);
+    match &mut start_settings.mode {
+        SimulationMode::SafeZoneRace { radius_low, radius_high } => {
+            override_setting(radius_low, &args.safe_lower);
+            override_setting(radius_high, &args.safe_upper);
+        }
+    }
+
     let mut agents : Vec<Agent> = vec![];
     let mut settings = start_settings;
-
-    // Override
-    settings.generation_time = 100.0;
 
     let mut log = history::History::new(start_header.clone());
 
@@ -233,7 +284,7 @@ fn main() {
 
                 let mut time: f32 = 0.0;
                 while time < settings.generation_time {
-                    if enable_viewer {
+                    if args.viewer {
                         std::thread::sleep(std::time::Duration::from_millis(settings.frame_interval.into()));
                     }
 
